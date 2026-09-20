@@ -1,0 +1,25 @@
+{
+  "title": "Stockport Bin Collections Plus",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add Stockport bin collections",
+        "description": "Paste the complete bin collection URL from the Stockport Council website.",
+        "data": {
+          "collection_url": "Collection URL"
+        },
+        "data_description": {
+          "collection_url": "The full myaccount.stockport.gov.uk/bin-collections/show/... URL for the property."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not connect to the Stockport Council website.",
+      "invalid_response": "The page did not contain recognisable bin collection dates.",
+      "invalid_url": "Enter a valid Stockport Council bin collection URL."
+    },
+    "abort": {
+      "already_configured": "This collection page is already configured."
+    }
+  }
+}

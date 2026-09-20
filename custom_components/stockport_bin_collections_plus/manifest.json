@@ -1,0 +1,12 @@
+{
+  "domain": "stockport_bin_collections_plus",
+  "name": "Stockport Bin Collections Plus",
+  "codeowners": ["@AndyO450"],
+  "config_flow": true,
+  "documentation": "https://github.com/AndyO450/stockport-bin-collections-plus",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/AndyO450/stockport-bin-collections-plus/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}
