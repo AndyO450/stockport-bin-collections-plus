@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 _LOGGER = logging.getLogger(__name__)
 
 FRONTEND_URL = "/stockport-bin-collections-plus"
-FRONTEND_VERSION = "1.1.3"
+FRONTEND_VERSION = "1.1.3"  # x-release-please-version
 
 
 async def async_register_frontend(hass: HomeAssistant) -> None:
