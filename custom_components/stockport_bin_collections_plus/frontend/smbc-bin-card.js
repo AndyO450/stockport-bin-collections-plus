@@ -35,7 +35,7 @@ class SmbcBinCard extends HTMLElement {
   }
 
   getCardSize() {
-    return 3;
+    return 4;
   }
 
   getGridOptions() {
@@ -82,6 +82,62 @@ class SmbcBinCard extends HTMLElement {
     }).format(date);
   }
 
+  _description(colour) {
+    return {
+      blue: "Paper & card",
+      brown: "Plastic & glass",
+      green: "Food & garden",
+      black: "General waste",
+    }[colour] || "Household waste";
+  }
+
+  _localIsoDate(offsetDays = 0) {
+    const date = new Date();
+    date.setHours(12, 0, 0, 0);
+    date.setDate(date.getDate() + offsetDays);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  _summary(entities) {
+    const dated = entities
+      .filter((entity) => /^\d{4}-\d{2}-\d{2}$/.test(entity.state))
+      .sort((a, b) => a.state.localeCompare(b.state));
+    if (!dated.length) {
+      return { headline: "Collection date unavailable", detail: "Check the integration status", urgent: false };
+    }
+
+    const nextDate = dated[0].state;
+    const nextBins = dated.filter((entity) => entity.state === nextDate);
+    const names = nextBins.map((entity) => {
+      const colour = this._colour(entity.entity_id);
+      return colour ? colour[0].toUpperCase() + colour.slice(1) : "Bin";
+    });
+    const joined =
+      names.length > 1
+        ? `${names.slice(0, -1).join(", ")} & ${names.at(-1)}`
+        : names[0];
+
+    if (nextDate === this._localIsoDate(0)) {
+      return { headline: "Collection today", detail: `${joined} ${names.length === 1 ? "bin" : "bins"}`, urgent: true };
+    }
+    if (nextDate === this._localIsoDate(1)) {
+      return { headline: `Put ${joined} ${names.length === 1 ? "bin" : "bins"} out tonight`, detail: `Collection ${this._formatDate(nextDate)}`, urgent: true };
+    }
+
+    const daysAway = Math.round(
+      (new Date(`${nextDate}T12:00:00`) - new Date(`${this._localIsoDate()}T12:00:00`)) /
+        86400000
+    );
+    return {
+      headline: daysAway <= 7 ? "Coming up this week" : "Next collection",
+      detail: `${joined} ${names.length === 1 ? "bin" : "bins"} · ${this._formatDate(nextDate)}`,
+      urgent: false,
+    };
+  }
+
   _escape(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
@@ -104,6 +160,7 @@ class SmbcBinCard extends HTMLElement {
     if (!this.shadowRoot || !this._hass || !this.config) return;
     const entities = this._entities();
     const title = this.config.title || "SMBC bin collections";
+    const summary = this._summary(entities);
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -114,6 +171,16 @@ class SmbcBinCard extends HTMLElement {
           margin: 0 2px 14px; font-size: 20px; font-weight: 650;
         }
         .header ha-icon { color: var(--primary-color); }
+        .summary {
+          display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 10px;
+          margin-bottom: 12px; padding: 12px 14px; border-radius: 14px;
+          background: rgba(3,169,244,.13); border: 1px solid rgba(3,169,244,.28);
+        }
+        .summary.urgent { background: rgba(255,152,0,.17); border-color: rgba(255,152,0,.38); }
+        .summary ha-icon { color: #039be5; --mdc-icon-size: 31px; }
+        .summary.urgent ha-icon { color: #ff9800; }
+        .summary-title { font-size: 16px; font-weight: 750; line-height: 1.25; }
+        .summary-detail { margin-top: 3px; color: var(--secondary-text-color); font-size: 13px; }
         .grid {
           display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
@@ -122,7 +189,7 @@ class SmbcBinCard extends HTMLElement {
           --bin-color: #607d8b; --bin-bg: rgba(96,125,139,.17);
           appearance: none; border: 1px solid color-mix(in srgb, var(--bin-color) 45%, transparent);
           border-radius: 14px; background: var(--bin-bg); color: var(--primary-text-color);
-          min-height: 88px; padding: 13px; cursor: pointer; text-align: left;
+          min-height: 108px; padding: 13px; cursor: pointer; text-align: left;
           display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 10px;
           transition: transform .12s ease, filter .12s ease;
         }
@@ -131,6 +198,7 @@ class SmbcBinCard extends HTMLElement {
         .bin ha-icon { color: var(--bin-color); --mdc-icon-size: 34px; }
         .name { font-size: 15px; font-weight: 700; text-transform: capitalize; }
         .date { margin-top: 5px; font-size: 14px; font-weight: 600; color: var(--secondary-text-color); }
+        .description { margin-top: 3px; font-size: 12px; color: var(--secondary-text-color); }
         .blue { --bin-color: #2196f3; --bin-bg: rgba(33,150,243,.18); }
         .brown { --bin-color: #9b6a55; --bin-bg: rgba(121,85,72,.22); }
         .green { --bin-color: #43a047; --bin-bg: rgba(76,175,80,.18); }
@@ -142,6 +210,10 @@ class SmbcBinCard extends HTMLElement {
       </style>
       <ha-card>
         <div class="header"><ha-icon icon="mdi:trash-can-outline"></ha-icon>${this._escape(title)}</div>
+        <div class="summary ${summary.urgent ? "urgent" : ""}">
+          <ha-icon icon="${summary.urgent ? "mdi:weather-night" : "mdi:calendar-clock"}"></ha-icon>
+          <div><div class="summary-title">${this._escape(summary.headline)}</div><div class="summary-detail">${this._escape(summary.detail)}</div></div>
+        </div>
         ${entities.length ? `<div class="grid">${entities
           .map((entity) => {
             const colour = this._colour(entity.entity_id) || "";
@@ -150,7 +222,7 @@ class SmbcBinCard extends HTMLElement {
               `${colour} bin`;
             return `<button class="bin ${colour}" data-entity="${entity.entity_id}">
               <ha-icon icon="mdi:trash-can"></ha-icon>
-              <span><div class="name">${this._escape(name)}</div><div class="date">${this._escape(this._formatDate(entity.state))}</div></span>
+              <span><div class="name">${this._escape(name)}</div><div class="date">${this._escape(this._formatDate(entity.state))}</div><div class="description">${this._escape(this._description(colour))}</div></span>
             </button>`;
           })
           .join("")}</div>` : `<div class="empty">No Stockport bin date sensors found. Configure the integration first, or select the sensors in the card editor.</div>`}

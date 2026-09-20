@@ -39,4 +39,11 @@ type: custom:smbc-bin-card
 title: Bin collections
 ```
 
+The card highlights the next collection with an actionable message—such as **Put Blue, Brown & Green bins out tonight**—and explains what belongs in each bin:
+
+- Blue: paper and card
+- Brown: plastic and glass
+- Green: food and garden waste
+- Black: general waste
+
 This is an unofficial community integration and is not affiliated with Stockport Metropolitan Borough Council.
