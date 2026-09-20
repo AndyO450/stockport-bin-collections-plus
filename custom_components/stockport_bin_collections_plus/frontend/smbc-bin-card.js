@@ -113,7 +113,7 @@ class SmbcBinCard extends HTMLElement {
       .filter((entity) => /^\d{4}-\d{2}-\d{2}$/.test(entity.state))
       .sort((a, b) => a.state.localeCompare(b.state));
     if (!dated.length) {
-      return { headline: "Collection date unavailable", detail: "Check the integration status", urgent: false };
+      return { date: "Date unavailable", bins: [], action: "Check the integration status", urgent: false };
     }
 
     const nextDate = dated[0].state;
@@ -122,16 +122,11 @@ class SmbcBinCard extends HTMLElement {
       const colour = this._colour(entity.entity_id);
       return colour ? colour[0].toUpperCase() + colour.slice(1) : "Bin";
     });
-    const joined =
-      names.length > 1
-        ? `${names.slice(0, -1).join(", ")} & ${names.at(-1)}`
-        : names[0];
-
     if (nextDate === this._localIsoDate(0)) {
-      return { headline: "Collection today", detail: joined, urgent: true };
+      return { date: this._formatDate(nextDate), bins: names, action: "Collection is today", urgent: true };
     }
     if (nextDate === this._localIsoDate(1)) {
-      return { headline: "Bins to put out tonight", detail: `${joined} · Collection tomorrow, ${this._formatDate(nextDate).replace(/^[A-Za-z]{3},?\s/, "")}`, urgent: true };
+      return { date: this._formatDate(nextDate), bins: names, action: "Put these bins out tonight", urgent: true };
     }
 
     const daysAway = Math.round(
@@ -139,8 +134,9 @@ class SmbcBinCard extends HTMLElement {
         86400000
     );
     return {
-      headline: daysAway <= 7 ? "Coming up this week" : "Next collection",
-      detail: `${joined} ${names.length === 1 ? "bin" : "bins"} · ${this._formatDate(nextDate)}`,
+      date: this._formatDate(nextDate),
+      bins: names,
+      action: daysAway <= 7 ? "Coming up this week" : "",
       urgent: false,
     };
   }
@@ -179,15 +175,20 @@ class SmbcBinCard extends HTMLElement {
         }
         .header ha-icon { color: var(--primary-color); }
         .summary {
-          display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 10px;
-          margin-bottom: 12px; padding: 12px 14px; border-radius: 14px;
-          background: rgba(3,169,244,.13); border: 1px solid rgba(3,169,244,.28);
+          margin-bottom: 12px; padding: 14px 16px; border-radius: 14px;
+          background: rgba(3,169,244,.10); border: 1px solid rgba(3,169,244,.25);
         }
         .summary.urgent { background: rgba(255,152,0,.17); border-color: rgba(255,152,0,.38); }
-        .summary ha-icon { color: #039be5; --mdc-icon-size: 31px; }
-        .summary.urgent ha-icon { color: #ff9800; }
-        .summary-title { font-size: 16px; font-weight: 750; line-height: 1.25; }
-        .summary-detail { margin-top: 3px; color: var(--secondary-text-color); font-size: 13px; }
+        .summary-kicker { color: var(--secondary-text-color); font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+        .summary-date { margin-top: 3px; font-size: 23px; font-weight: 750; line-height: 1.2; }
+        .summary-bins { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .summary-bin { --bin-color: #607d8b; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; }
+        .summary-bin ha-icon { color: var(--bin-color); --mdc-icon-size: 23px; }
+        .summary-bin.blue { --bin-color: #2196f3; }
+        .summary-bin.brown { --bin-color: #a4715b; }
+        .summary-bin.green { --bin-color: #4caf50; }
+        .summary-bin.black { --bin-color: #9e9e9e; }
+        .summary-action { margin-top: 10px; color: #ffb300; font-size: 13px; font-weight: 700; }
         .grid {
           display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 10px;
@@ -218,8 +219,10 @@ class SmbcBinCard extends HTMLElement {
       <ha-card>
         <div class="header"><ha-icon icon="mdi:trash-can-outline"></ha-icon>${this._escape(title)}</div>
         <div class="summary ${summary.urgent ? "urgent" : ""}">
-          <ha-icon icon="${summary.urgent ? "mdi:weather-night" : "mdi:calendar-clock"}"></ha-icon>
-          <div><div class="summary-title">${this._escape(summary.headline)}</div><div class="summary-detail">${this._escape(summary.detail)}</div></div>
+          <div class="summary-kicker">Next collection</div>
+          <div class="summary-date">${this._escape(summary.date)}</div>
+          <div class="summary-bins">${summary.bins.map((name) => `<span class="summary-bin ${name.toLowerCase()}"><ha-icon icon="mdi:trash-can"></ha-icon>${this._escape(name)}</span>`).join("")}</div>
+          ${summary.action ? `<div class="summary-action">${this._escape(summary.action)}</div>` : ""}
         </div>
         ${entities.length ? `<div class="grid">${entities
           .map((entity) => {
