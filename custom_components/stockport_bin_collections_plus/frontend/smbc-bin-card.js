@@ -82,6 +82,13 @@ class SmbcBinCard extends HTMLElement {
     }).format(date);
   }
 
+  _formatCardDate(value) {
+    const shortDate = this._formatDate(value).replace(/^[A-Za-z]{3},?\s/, "");
+    if (value === this._localIsoDate(0)) return `Today · ${shortDate}`;
+    if (value === this._localIsoDate(1)) return `Tomorrow · ${shortDate}`;
+    return this._formatDate(value);
+  }
+
   _description(colour) {
     return {
       blue: "Paper & card",
@@ -121,10 +128,10 @@ class SmbcBinCard extends HTMLElement {
         : names[0];
 
     if (nextDate === this._localIsoDate(0)) {
-      return { headline: "Collection today", detail: `${joined} ${names.length === 1 ? "bin" : "bins"}`, urgent: true };
+      return { headline: "Collection today", detail: joined, urgent: true };
     }
     if (nextDate === this._localIsoDate(1)) {
-      return { headline: `Put ${joined} ${names.length === 1 ? "bin" : "bins"} out tonight`, detail: `Collection ${this._formatDate(nextDate)}`, urgent: true };
+      return { headline: "Bins to put out tonight", detail: `${joined} · Collection tomorrow, ${this._formatDate(nextDate).replace(/^[A-Za-z]{3},?\s/, "")}`, urgent: true };
     }
 
     const daysAway = Math.round(
@@ -189,7 +196,7 @@ class SmbcBinCard extends HTMLElement {
           --bin-color: #607d8b; --bin-bg: rgba(96,125,139,.17);
           appearance: none; border: 1px solid color-mix(in srgb, var(--bin-color) 45%, transparent);
           border-radius: 14px; background: var(--bin-bg); color: var(--primary-text-color);
-          min-height: 108px; padding: 13px; cursor: pointer; text-align: left;
+          min-height: 94px; padding: 12px; cursor: pointer; text-align: left;
           display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 10px;
           transition: transform .12s ease, filter .12s ease;
         }
@@ -222,7 +229,7 @@ class SmbcBinCard extends HTMLElement {
               `${colour} bin`;
             return `<button class="bin ${colour}" data-entity="${entity.entity_id}">
               <ha-icon icon="mdi:trash-can"></ha-icon>
-              <span><div class="name">${this._escape(name)}</div><div class="date">${this._escape(this._formatDate(entity.state))}</div><div class="description">${this._escape(this._description(colour))}</div></span>
+              <span><div class="name">${this._escape(name)}</div><div class="date">${this._escape(this._formatCardDate(entity.state))}</div><div class="description">${this._escape(this._description(colour))}</div></span>
             </button>`;
           })
           .join("")}</div>` : `<div class="empty">No Stockport bin date sensors found. Configure the integration first, or select the sensors in the card editor.</div>`}
