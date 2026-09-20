@@ -24,4 +24,19 @@ Use the private collection URL supplied by the Stockport Council address finder.
 
 The integration validates the page before saving the entry. Collection dates are exposed as sensors with the `date` device class, making them suitable for dashboard cards and automations.
 
+## SMBC Bin Card
+
+Version 1.1 includes the **SMBC Bin Card**. The integration loads it automatically, so no dashboard resource configuration is required.
+
+1. Edit a dashboard and choose **Add card**.
+2. Search for **SMBC Bin Card** in the card picker.
+3. Add it. With one configured address, it discovers the four bin sensors automatically.
+
+The visual editor also lets you change the title or select sensors explicitly. Manual YAML is supported when needed:
+
+```yaml
+type: custom:smbc-bin-card
+title: Bin collections
+```
+
 This is an unofficial community integration and is not affiliated with Stockport Metropolitan Borough Council.

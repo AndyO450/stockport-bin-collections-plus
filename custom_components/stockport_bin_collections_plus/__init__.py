@@ -9,8 +9,15 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import StockportBinApi
 from .const import CONF_COLLECTION_URL, PLATFORMS
 from .coordinator import StockportBinCoordinator
+from .frontend import async_register_frontend
 
 type StockportBinConfigEntry = ConfigEntry[StockportBinCoordinator]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Set up integration-level frontend assets."""
+    await async_register_frontend(hass)
+    return True
 
 
 async def async_setup_entry(
